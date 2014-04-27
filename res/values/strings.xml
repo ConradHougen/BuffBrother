@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Buff Brother</string>
+    <string name="action_settings">Settings</string>
+    <color name="blegh">#FF00FF</color>
+    <string name="Header">Track the buff bus!</string>
+    <color name="Gold">#cfb87c</color>
+    <color name="Black">#000000</color>
+
+</resources>
