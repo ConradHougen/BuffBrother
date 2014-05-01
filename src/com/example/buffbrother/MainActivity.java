@@ -1,23 +1,41 @@
 package com.example.buffbrother;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.android.gms.maps.*;
 import com.google.android.gms.maps.model.*;
+
 import android.support.v7.app.ActionBarActivity;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
 import android.os.Build;
 import android.annotation.TargetApi;
+import android.content.SharedPreferences;
 
-@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.PropertiesCredentials;
+import com.amazonaws.services.dynamodbv2.*;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+
+
+//@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class MainActivity extends ActionBarActivity {
 	
-	private GoogleMap mMap;
+	public static AmazonDynamoDBClient client;
+	// keep hashmap of markers sorted by bus id
+	public static HashMap<Integer, Marker> busMarkerList = new HashMap<Integer, Marker>();
+	
+	private static final String AWS_ACCESS_KEY = "AKIAIAHBD5GTZA5EMGUA";
+	private static final String AWS_SECRET_KEY = "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";
+	
+	public static GoogleMap mMap;
 	private LatLng Boulder = new LatLng(40.002917, -105.259268);
 	
 	@Override
@@ -27,7 +45,38 @@ public class MainActivity extends ActionBarActivity {
 		
 		Log.d("MainActivity", "CONRAD: Creating main activity...");
 
+		try {
+			createClient();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+		
 		setUpMapIfNeeded();
+		
+		// loop forever
+		do
+		{
+			Log.d("MainActivity", "CONRAD: About to retrieve item");
+			new ReadDynamoDB().execute(client);
+			
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} while(false);
+
+	}
+	
+	private void createClient() throws IOException {
+		Log.d("MainActivity", "Creating client");
+		//AWSCredentials credentials = new PropertiesCredentials(
+		//		MainActivity.class.getResourceAsStream("AwsCredentials.properties"));
+		AWSCredentials credentials = new BasicAWSCredentials( AWS_ACCESS_KEY, AWS_SECRET_KEY );
+		client = new AmazonDynamoDBClient(credentials);
+		Log.d("MainActivity", "Done creating client");
 	}
 	
 	private void setUpMapIfNeeded() {
@@ -41,6 +90,7 @@ public class MainActivity extends ActionBarActivity {
 			if(mMap != null) {
 				Log.d("MainActivity", "CONRAD: mMap not null anymore");
 				// Safe to manipulate the map
+				//mMap.getUiSettings().setScrollGesturesEnabled(false);
 				mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
 				mMap.setBuildingsEnabled(false);
 				mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Boulder, 14));
